@@ -1,0 +1,45 @@
+-------------------------------------------------------------------------------
+       log:  C:\mitbook\textfiles\nls80.des
+  log type:  text
+ opened on:  22 Apr 2002, 11:04:40
+
+. ds
+wage      hours     iq        kww       educ      exper     tenure    age      
+married   black     south     urban     sibs      brthord   meduc     feduc    
+lwage     
+
+. des
+
+Contains data from nls80.dta
+  obs:           935                          
+ vars:            17                          2 Sep 1996 16:00
+ size:        24,310 (97.4% of memory free)
+-------------------------------------------------------------------------------
+              storage  display     value
+variable name   type   format      label      variable label
+-------------------------------------------------------------------------------
+wage            int    %9.0g                  monthly earnings
+hours           byte   %9.0g                  average weekly hours
+iq              int    %9.0g                  IQ score
+kww             byte   %9.0g                  knowledge of world work score
+educ            byte   %9.0g                  years of education
+exper           byte   %9.0g                  years of work experience
+tenure          byte   %9.0g                  years with current employer
+age             byte   %9.0g                  age in years
+married         byte   %9.0g                  =1 if married
+black           byte   %9.0g                  =1 if black
+south           byte   %9.0g                  =1 if live in south
+urban           byte   %9.0g                  =1 if live in SMSA
+sibs            byte   %9.0g                  number of siblings
+brthord         byte   %9.0g                  birth order
+meduc           byte   %9.0g                  mother's education
+feduc           byte   %9.0g                  father's education
+lwage           float  %9.0g                  log(wage)
+-------------------------------------------------------------------------------
+Sorted by:  
+
+. log off
+       log:  C:\mitbook\textfiles\nls80.des
+  log type:  text
+ paused on:  22 Apr 2002, 11:04:48
+-------------------------------------------------------------------------------
