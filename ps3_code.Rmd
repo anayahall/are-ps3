@@ -1,7 +1,7 @@
 ---
 title: "Problem Set #3"
 author: "Anaya Hall & Christian Miller"
-date: "Approximately April 6th"
+date: "Due approximately April 6th"
 output: pdf_document
 fontsize: 11pt
 geometry: margin=.75in 
@@ -160,7 +160,8 @@ ols <- function(data, y_data, X_data, intercept = T, H0 = 0, two_tail = T, alpha
     ttest_table <-  ttest_df %>% knitr::kable(
       booktabs = T,
       format.args = list(scientific = F),
-      escape = F
+      escape = F,
+      caption = "OLS Results"
     )
 
   # Data frame for exporting for y, y_hat, X, and e vectors ----
