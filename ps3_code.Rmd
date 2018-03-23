@@ -53,7 +53,7 @@ So far, everthing looks good.
 
 Model (1) :
 
-$log(wage) = \beta_0 + exper * \beta_1 + tenure * \beta_2 + married * \beta_3 + south * \beta_4 + urban * \beta_5 + black * \beta_6 + educ * \beta_7 + \epsilon$
+$log(wage) = \beta_0 + exper \cdot \beta_1 + tenure \cdot \beta_2 + married \cdot \beta_3 + south \cdot \beta_4 + urban \cdot \beta_5 + black \cdot \beta_6 + educ \cdot \beta_7 + \epsilon$
 
 ### (a) Estimate model (1) via OLS
 
@@ -227,4 +227,5 @@ vcov_white <- function(data, y_var, X_vars, intercept = T) {
 
 Model (2) :
 
-$log(wage) = \beta_0 + exper * \beta_1 + tenure * \beta_2 + married * \beta_3 + south * \beta_4 + urban * \beta_5 + black * \beta_6 + educ * \beta_7 + \epsilon$
+$log(wage) = \beta_0 + exper \cdot \beta_1 + tenure \cdot \beta_2 + married \cdot \beta_3 + south \cdot \beta_4 + urban \cdot \beta_5 + black \cdot \beta_6 + educ \cdot \beta_7 + \epsilon$
+
