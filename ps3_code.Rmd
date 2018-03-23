@@ -1,0 +1,229 @@
+---
+title: "Problem Set #3"
+author: "Anaya Hall & Christian Miller"
+date: "Approximately April 6th"
+output: pdf_document
+fontsize: 11pt
+geometry: margin=.75in 
+---
+
+```{r setup, include=FALSE}
+
+rm(list = ls())
+# Setup
+knitr::opts_chunk$set(echo = TRUE)
+# Options
+options(stringsAsFactors = F)
+# Packages
+library(pacman)
+p_load(knitr, kableExtra, tidyverse, dplyr, readr, magrittr, ggplot2, readxl, ascii, sandwich)
+
+```
+
+# Wage Regressions - Blackburn and Neumark (QJE 1992)
+The goal of this problem set is to explore some **tests for heteroskedasticity** and explore **the fixes** discussed in class.
+
+
+## Question 1:
+**Read the data into R. Plot the series and make sure your data are read in correctly.**
+
+```{r read_data, message=FALSE}
+
+# Read in CSV as data.frame
+wage_df <- readr::read_csv("nls80.csv")
+
+# Select only the variables in our model
+wage_df %<>% select(wage, exper, tenure, married, south, urban, black, educ)
+```
+
+
+``` {r plot_series, message = FALSE}
+# Plot the variables in our model
+ggplot(data = gather(wage_df), aes(x = value)) +
+geom_histogram() +
+facet_wrap(~ key, scales = "free") +
+ggtitle("Histograms of Wage Data variables") +
+ylab("Count") +
+xlab("Value") + theme_minimal()
+```
+
+So far, everthing looks good.
+
+## Question 2: Exploring Heteroskedasticity
+
+Model (1) :
+
+$log(wage) = \beta_0 + exper * \beta_1 + tenure * \beta_2 + married * \beta_3 + south * \beta_4 + urban * \beta_5 + black * \beta_6 + educ * \beta_7 + \epsilon$
+
+### (a) Estimate model (1) via OLS
+
+First, load our OLS function created in Problem Sets 1 & 2.
+
+```{r OLS function}
+
+# Function to convert tibble, data.frame, or tbl_df to matrix
+to_matrix <- function(the_df, vars) {
+  # Create a matrix from variables in var
+  new_mat <- the_df %>%
+    #Select the columns given in 'vars'
+    select_(.dots = vars) %>%
+    # Convert to matrix
+    as.matrix()
+  # Return 'new_mat'
+  return(new_mat)
+}
+
+ols <- function(data, y_data, X_data, intercept = T, H0 = 0, two_tail = T, alpha = 0.05) {
+  # Function setup ----
+    # Require the 'dplyr' package
+    require(dplyr)
+  
+  # Create dependent and independent variable matrices ----
+    # y matrix
+    y <- to_matrix (the_df = data, vars = y_data)
+    # X matrix
+    X <- to_matrix (the_df = data, vars = X_data)
+      # If 'intercept' is TRUE, then add a column of ones
+      if (intercept == T) {
+      X <- cbind(1,X)
+      colnames(X) <- c("intercept", X_data)
+      }
+ 
+  # Calculate b, y_hat, and residuals ----
+    b <- solve(t(X) %*% X) %*% t(X) %*% y
+    y_hat <- X %*% b
+    e <- y - y_hat
+  
+  # Useful -----
+    n <- nrow(X) # number of observations
+    k <- ncol(X) # number of independent variables
+    dof <- n - k # degrees of freedom
+    i <- rep(1,n) # column of ones for demeaning matrix
+    A <- diag(i) - (1 / n) * i %*% t(i) # demeaning matrix
+    y_star <- A %*% y # for SST
+    X_star <- A %*% X # for SSM
+    SST <- drop(t(y_star) %*% y_star)
+    SSM <- drop(t(b) %*% t(X_star) %*% X_star %*% b)
+    SSR <- drop(t(e) %*% e)
+  
+  # Measures of fit and estimated variance ----
+    R2uc <- drop((t(y_hat) %*% y_hat)/(t(y) %*% y)) # Uncentered R^2
+    R2 <- 1 - SSR/SST # Uncentered R^2
+    R2adj <- 1 - (n-1)/dof * (1 - R2) # Adjusted R^2
+    AIC <- log(SSR/n) + 2*k/n # AIC
+    SIC <- log(SSR/n) + k/n*log(n) # SIC
+    s2 <- SSR/dof # s^2
+  
+  # Measures of fit table ----
+    mof_table_df <- data.frame(R2uc, R2, R2adj, SIC, AIC, SSR, s2)
+    mof_table_col_names <- c("$R^2_\\text{uc}$", "$R^2$",
+                             "$R^2_\\text{adj}$",
+                             "SIC", "AIC", "SSR", "$s^2$")
+    mof_table <-  mof_table_df %>% knitr::kable(
+      row.names = F,
+      col.names = mof_table_col_names,
+      format.args = list(scientific = F, digits = 4),
+      booktabs = T,
+      escape = F
+    )
+  
+  # t-test----
+    # Standard error
+    se <- as.vector(sqrt(s2 * diag(solve(t(X) %*% X))))
+    # Vector of _t_ statistics
+    t_stats <- (b - H0) / se
+    # Calculate the p-values
+    if (two_tail == T) {
+    p_values <- pt(q = abs(t_stats), df = dof, lower.tail = F) * 2
+    } else {
+      p_values <- pt(q = abs(t_stats), df = dof, lower.tail = F)
+    }
+    # Do we (fail to) reject?
+    reject <- ifelse(p_values < alpha, reject <- "Reject", reject <- "Fail to Reject")
+    
+    # Nice table (data.frame) of results
+    ttest_df <- data.frame(
+      # The rows have the coef. names
+      effect = rownames(b),
+      # Estimated coefficients
+      coef = as.vector(b) %>% round(3),
+      # Standard errors
+      std_error = as.vector(se) %>% round(3),
+      # t statistics
+      t_stat = as.vector(t_stats) %>% round(3),
+      # p-values
+      p_value = as.vector(p_values) %>% round(4),
+      # reject null?
+      significance = as.character(reject)
+      )
+  
+    ttest_table <-  ttest_df %>% knitr::kable(
+      booktabs = T,
+      format.args = list(scientific = F),
+      escape = F
+    )
+
+  # Data frame for exporting for y, y_hat, X, and e vectors ----
+    export_df <- data.frame(y, y_hat, e, X) %>% tbl_df()
+    colnames(export_df) <- c("y","y_hat","e",colnames(X))
+  
+  # Return ----
+    return(list(n=n, dof=dof, b=b, vars=export_df, R2uc=R2uc,R2=R2,
+                R2adj=R2adj, AIC=AIC, SIC=SIC, s2=s2, SST=SST, SSR=SSR,
+                mof_table=mof_table, ttest=ttest_table))
+}
+```
+\newpage
+
+```{r model1}
+wage_df %<>% mutate(
+  log_wage = log(wage))
+
+model_1 <- ols(wage_df, y_data = "log_wage", 
+               X_data = c("exper", "tenure", "married", "south", "urban", "black", "educ"))
+
+model_1$ttest
+
+```
+
+### (b) Conduct a White - test for heteroskedastic errors. 
+**Use levels, interactions and second order terms only. Do we have a problem?**
+
+``` {r vcov_white}
+vcov_white <- function(data, y_var, X_vars, intercept = T) {
+  # Turn data into matrices
+  y <- to_matrix(data, y_var)
+  X <- to_matrix(data, X_vars)
+  # Add intercept
+  if (intercept == T) X <- cbind(1, X)
+  # Calculate n and k for degrees of freedom
+  n <- nrow(X)
+  k <- ncol(X)
+  # Estimate coefficients
+  b <- b_ols(y, X)
+  # Update names
+  if (intercept == T) rownames(b)[1] <- "Intercept"
+  # Calculate OLS residuals
+  e <- y - X %*% b
+  # Inverse of X'X
+  XX_inv <- solve(t(X) %*% X)
+  # For each row, calculate x_i' x_i e_i^2; then sum
+  sigma_hat <- lapply(X = 1:n, FUN = function(i) {
+    # Define x_i
+    x_i <- matrix(as.vector(X[i,]), nrow = 1)
+    # Return x_i' x_i e_i^2
+    return(t(x_i) %*% x_i * e[i]^2)
+  }) %>% Reduce(f = "+", x = .)
+  # Return the results
+  return(XX_inv %*% sigma_hat %*% XX_inv)
+}
+
+```
+
+
+
+## Question 3: The Delta Method
+
+Model (2) :
+
+$log(wage) = \beta_0 + exper * \beta_1 + tenure * \beta_2 + married * \beta_3 + south * \beta_4 + urban * \beta_5 + black * \beta_6 + educ * \beta_7 + \epsilon$
