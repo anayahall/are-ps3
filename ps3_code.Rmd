@@ -190,35 +190,17 @@ model_1$ttest
 ### (b) Conduct a White - test for heteroskedastic errors. 
 **Use levels, interactions and second order terms only. Do we have a problem?**
 
-``` {r vcov_white}
-vcov_white <- function(data, y_var, X_vars, intercept = T) {
-  # Turn data into matrices
-  y <- to_matrix(data, y_var)
-  X <- to_matrix(data, X_vars)
-  # Add intercept
-  if (intercept == T) X <- cbind(1, X)
-  # Calculate n and k for degrees of freedom
-  n <- nrow(X)
-  k <- ncol(X)
-  # Estimate coefficients
-  b <- b_ols(y, X)
-  # Update names
-  if (intercept == T) rownames(b)[1] <- "Intercept"
-  # Calculate OLS residuals
-  e <- y - X %*% b
-  # Inverse of X'X
-  XX_inv <- solve(t(X) %*% X)
-  # For each row, calculate x_i' x_i e_i^2; then sum
-  sigma_hat <- lapply(X = 1:n, FUN = function(i) {
-    # Define x_i
-    x_i <- matrix(as.vector(X[i,]), nrow = 1)
-    # Return x_i' x_i e_i^2
-    return(t(x_i) %*% x_i * e[i]^2)
-  }) %>% Reduce(f = "+", x = .)
-  # Return the results
-  return(XX_inv %*% sigma_hat %*% XX_inv)
-}
+White's Test:
+Regress the squared residuals ($e^2_i$) on a constant, all variables in *$X$*, squares of all variables in *$X$* and all cross products. $n \dot R^2$ from this regression is distributed as a $\chi^2_{(p-1)}$, where p is the number of regressors in this equation including the constant. The null in this test is homoskedastic disturbances.
 
+
+``` {r white_test_fxn}
+
+white_test <- function(resid, Xs_mat){
+  
+  Xs_mat %<>% as.matrix()
+  
+}
 ```
 
 
