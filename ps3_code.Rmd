@@ -202,7 +202,7 @@ white_test <- function(resid, cov_mat){
   
   # Interaction matrix
   cov_n <- nrow(cov_mat)
-  cov_k <- sum(seq(ncol(cov_mat))
+  cov_k <- sum(seq(ncol(cov_mat)))
   
   print(paste("COL NUM: ", cov_k))
   
@@ -210,14 +210,14 @@ white_test <- function(resid, cov_mat){
   
   ## NEED TO MAKE THIS WORK!!!!!!!!!!!! Try combn function ??
   
-  for (i in 1:cov_k) {
-    for (j in i:cov_k) {
-      if (i == 1) m <- j
-      ## i don't really understand what's happening here.....
-      if (i > 1) m <- sum(seq(ncol(cov_mat), 1, -1)[1:(i-1)]) + (j - i + 1)
-      int_mat[, m] <- cov_mat[, i] * cov_mat[, j]
-    }
-  }
+  # for (i in 1:cov_k) {
+  #   for (j in i:cov_k) {
+  #     if (i == 1) m <- j
+  #     ## i don't really understand what's happening here.....
+  #     if (i > 1) m <- sum(seq(ncol(cov_mat), 1, -1)[1:(i-1)]) + (j - i + 1)
+  #     int_mat[, m] <- cov_mat[, i] * cov_mat[, j]
+  #   }
+  # }
   
   
   cov_mat %<>% rbind(.,int_mat)
@@ -254,7 +254,7 @@ white_test <- function(resid, cov_mat){
   
 }
 
-white_test(resid,cov_mat)
+# white_test(resid,cov_mat)
 
 
 ```
