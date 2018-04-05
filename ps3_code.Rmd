@@ -11,12 +11,12 @@ geometry: margin=.75in
 
 rm(list = ls())
 # Setup
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = T)
 # Options
 options(stringsAsFactors = F)
 # Packages
 library(pacman)
-p_load(knitr, kableExtra, tidyverse, dplyr, readr, magrittr, ggplot2, readxl, ascii, sandwich)
+p_load(knitr, kableExtra, tidyverse, dplyr, readr, magrittr, ggplot2, readxl, ascii, sandwich, tinytec)
 
 ```
 
@@ -190,7 +190,7 @@ model_1$ttest
 ### (b) Conduct a White test for heteroskedastic errors. 
 **Use levels, interactions and second order terms only. Do we have a problem?**
 
-White's Test:
+_White's Test:_
 Regress the squared residuals ($e^2_i$) on a constant, all variables in *$X$*, squares of all variables in *$X$* and all cross products. $n \dot R^2$ from this regression is distributed as a $\chi^2_{(p-1)}$, where p is the number of regressors in this equation including the constant. The null in this test is homoskedastic disturbances.
 
 
@@ -264,17 +264,27 @@ cov_mat <- wage_df %>% select(exper, tenure, married, south, urban, black, educ)
 # Run White Test
 white_test(resid, cov_mat)
 ```
-
-Some evidence for heteroskedasticity, though not significant at 5% significance level.
+There is some evidence for heteroskedasticity (probabilty is 0.0678), though not significant at 5% significance level.
 
 
 ### (c) Goldfeld - Quandt Test for heteroskedastic errors
 *Use the tenure variable, leaving out the 235 observations in the middle. Do we have a problem?*
 
-Goldfeld-Quant Test:
+_Goldfeld-Quant Test:_
+Intuition: The disturbances for two distinct groups of observations vary.
+
+Process: Rank observations by x, separate into groups of high and low variances, then calculate test statistic:
+
+$ F_[n_1-k, n_2-k] = \frac {e'_1e_1/n_1 -k}{e'_2e_2/n_2 -k} $
+
 
 ``` {r goldfeldquant_fxn}
 
+GQ_test <- function(x1, x2) {
+  
+  
+  
+}
 
 ```
 
@@ -296,7 +306,9 @@ Goldfeld-Quant Test:
 
 ## Question 3: The Delta Method
 
+See Ed's notes here: [http://edrub.in/ARE212/section09.html#route_2:_delta_method]
+
 Model (2) :
 
-$log(wage) = \beta_0 + exper \cdot \beta_1 + tenure \cdot \beta_2 + married \cdot \beta_3 + south \cdot \beta_4 + urban \cdot \beta_5 + black \cdot \beta_6 + educ \cdot \beta_7 + \epsilon$
+$log(wage) = \beta_0 + exper \cdot \beta_1 + tenure \cdot \beta_2 + married \cdot \beta_3 + south \cdot \beta_4 + urban \cdot \beta_5 + black \cdot \beta_6 + educ \cdot \beta_7 + \epsilon $
 
