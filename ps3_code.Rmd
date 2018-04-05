@@ -93,7 +93,7 @@ ols <- function(data, y_data, X_data, intercept = T, H0 = 0, two_tail = T, alpha
     b <- solve(t(X) %*% X) %*% t(X) %*% y
     y_hat <- X %*% b
     e <- y - y_hat
-  
+    
   # Useful -----
     n <- nrow(X) # number of observations
     k <- ncol(X) # number of independent variables
@@ -169,7 +169,7 @@ ols <- function(data, y_data, X_data, intercept = T, H0 = 0, two_tail = T, alpha
     colnames(export_df) <- c("y","y_hat","e",colnames(X))
   
   # Return ----
-    return(list(n=n, dof=dof, b=b, vars=export_df, R2uc=R2uc,R2=R2,
+    return(list(n=n, dof=dof, b=b, vars=export_df, resid=e, R2uc=R2uc,R2=R2,
                 R2adj=R2adj, AIC=AIC, SIC=SIC, s2=s2, SST=SST, SSR=SSR,
                 mof_table=mof_table, ttest=ttest_table))
 }
@@ -187,23 +187,112 @@ model_1$ttest
 
 ```
 
-### (b) Conduct a White - test for heteroskedastic errors. 
+### (b) Conduct a White test for heteroskedastic errors. 
 **Use levels, interactions and second order terms only. Do we have a problem?**
 
 White's Test:
 Regress the squared residuals ($e^2_i$) on a constant, all variables in *$X$*, squares of all variables in *$X$* and all cross products. $n \dot R^2$ from this regression is distributed as a $\chi^2_{(p-1)}$, where p is the number of regressors in this equation including the constant. The null in this test is homoskedastic disturbances.
 
 
-``` {r white_test_fxn}
+``` {r white_test_fxn, include = F}
 
-white_test <- function(resid, Xs_mat){
+white_test <- function(resid, cov_mat){
   
-  Xs_mat %<>% as.matrix()
+  cov_mat %<>% as.matrix()
+  
+  # Interaction matrix
+  cov_n <- nrow(cov_mat)
+  cov_k <- sum(seq(ncol(cov_mat)))
+  
+  int_mat <- matrix(NA, nrow = cov_k, ncol = cov_n)
+  
+  ## NEED TO MAKE THIS WORK!!!!!!!!!!!! Try combn function ??
+  
+  # for (i in 1:cov_k) {
+  #   for (j in i:cov_k) {
+  #     if (i == 1) m <- j
+  #     if (i > 1) m <- sum(seq(ncol(cov_mat), 1, -1)[1:(i-1)]) + (j - i + 1)
+  #     int_mat[, m] <- cov_mat[, i] * cov_mat[, j]
+  #   }
+  # }
+  
+  
+  cov_mat %<>% rbind(.,int_mat)
+  
+  dep_var <- resid^2
+
+  # y-hat for residual regression = X*beta
+  dep_hat <- cov_mat %*% solve(t(cov_mat) %*% cov_mat) %*% t(cov_mat) %*% y_mat
+
+  # Calculate R2
+  SSM <- sum((dep_hat - mean(dep_var))^2)
+  SST <- sum((dep_var - mean(dep_var))^2)
+
+  # Calculate White test statistic = R^2 * n
+  test_stat <- SSM/SST * nrow(cov_mat)
+
+  # Calculate pvalue
+  p-value <- 1 - pchisq(q = test_stat, df = ncol(cov_mat))
+  
+  # CHECK
+  print(head(cov_mat)) 
+  print(head(int_mat)) 
+  
+  
+  # # white test results
+  # whitetest_df <- data.frame(test_stat, p_value, df)
+  # 
+  # 
+  # white_table <-  whitetest_df %>% knitr::kable(
+  #     booktabs = T,
+  #     format.args = list(scientific = F),
+  #     escape = F,
+  #     caption = "White Test"
   
 }
+
+
+
+
 ```
 
+```{r 2b}
+# Prep for white function
+resid <- model_1$resid
+cov_mat <- wage_df %>% select(exper, tenure, married, south, urban, black, educ)
 
+# Run White Test
+# white_test(resid, cov_mat)
+```
+
+*INTERPRET RESULTS*
+
+
+### (c) Goldfeld - Quandt Test for heteroskedastic errors
+*Use the tenure variable, leaving out the 235 observations in the middle. Do we have a problem?*
+
+Goldfeld-Quant Test:
+
+``` {r goldfeldquant_fxn}
+
+
+```
+
+```{r 2c}
+
+
+```
+
+### (d) Breusch-Pagan Test for heteroskedastic errors
+*Use all of the covariates as a simple linear combination. Do we have a problem?*
+
+```{r breushpagan_fxn}
+
+```
+
+``` {r 2d}
+
+```
 
 ## Question 3: The Delta Method
 
