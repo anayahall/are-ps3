@@ -470,12 +470,12 @@ vcov_ols(data = wage_df3,
 ```{r}
 model_1$b
 # Remind ourselves of LC and its var-cov matrix
-lc <- 100 * model_1$b[4] - 100
+lc <- 100 * (exp(model_1$b[4]) - 1)
 vcov1 <- vcov_ols(data = wage_df,
   y_var = "lwage",
   X_vars = c("exper", "tenure", "married", "south", "urban", "black", "educ"))
 # Define our derivative matrix
-deriv_mat <- matrix(c(0, 0, 0, 100, 0, 0, 0, 0), nrow = 1)
+deriv_mat <- matrix(c(0, 0, 0, 100 * exp(model_1$b[4]), 0, 0, 0, 0), nrow = 1)
 # Calculate the standard error of 'lc' via delta method
 lc_dm <- sqrt(deriv_mat %*% vcov1 %*% t(deriv_mat))
 
