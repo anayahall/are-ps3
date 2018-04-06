@@ -275,7 +275,7 @@ Intuition: The disturbances for two distinct groups of observations vary.
 
 Process: Rank observations by x, separate into groups of high and low variances, then calculate test statistic:
 
-$ F_[n_1-k, n_2-k] = \frac {e'_1e_1/n_1 -k}{e'_2e_2/n_2 -k} $
+
 
 
 ``` {r goldfeldquant_fxn}
@@ -308,7 +308,4 @@ GQ_test <- function(x1, x2) {
 
 See Ed's notes here: [http://edrub.in/ARE212/section09.html#route_2:_delta_method]
 
-Model (2) :
-
-$log(wage) = \beta_0 + exper \cdot \beta_1 + tenure \cdot \beta_2 + married \cdot \beta_3 + south \cdot \beta_4 + urban \cdot \beta_5 + black \cdot \beta_6 + educ \cdot \beta_7 + \epsilon $
 
