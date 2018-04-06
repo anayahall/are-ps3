@@ -317,12 +317,129 @@ According to the Goldfeld-Quandt Test (by tenure), yes, we have a significant he
 *Use all of the covariates as a simple linear combination. Do we have a problem?*
 
 ```{r breushpagan_fxn}
+BP_test <- function(e, k) {
+  n <- length(e)
+  
+  SSE <- sum((e-mean(e))^2)
+  test_stat <- (1/2)*SSE
+  
+  pvalue <- 1 - pchisq(test_stat, df = k)
+  
+  return(list(
+    "Test Statistic" = test_stat,
+    "P-Value" = pvalue
+  ))
+}
 
 ```
 
 ``` {r 2d}
+# Prep for test
+# Create new df w/ new variables
+num <- model_1$vars$e^2
+denom <- (t(model_1$vars$e) %*% model_1$vars$e)/nrow(wage_df) %>% as.numeric()
+wage_df %<>% mutate(bp_y = num/denom)
+
+# Run the regression with the new y variable
+bp_resid <- ols(wage_df, y_data = "bp_y", 
+               X_data = c("exper", "tenure", "married", "south", "urban", "black", "educ"))$vars$e
+
+# Run GQ Test
+BP_test(bp_resid, k=7)
 
 ```
+Very low p-value. So, this test further validates. But, something may be broken.e
+
+
+### (e) White Robust Standard Errors
+
+```{r Spherical varcov fxn}
+# Function for OLS coefficient estimates
+b_ols <- function(y, X) {
+  # Calculate beta hat
+  beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y
+  # Return beta_hat
+  return(beta_hat)
+}
+
+# Function for OLS coef., SE, t-stat, and p-value
+vcov_ols <- function(data, y_var, X_vars, intercept = T) {
+  # Turn data into matrices
+  y <- to_matrix(data, y_var)
+  X <- to_matrix(data, X_vars)
+  # Add intercept
+  if (intercept == T) X <- cbind(1, X)
+  # Calculate n and k for degrees of freedom
+  n <- nrow(X)
+  k <- ncol(X)
+  # Estimate coefficients
+  b <- b_ols(y, X)
+  # Update names
+  if (intercept == T) rownames(b)[1] <- "Intercept"
+  # Calculate OLS residuals
+  e <- y - X %*% b
+  # Calculate s^2
+  s2 <- (t(e) %*% e) / (n-k)
+  s2 %<>% as.numeric()
+  # Inverse of X'X
+  XX_inv <- solve(t(X) %*% X)
+  # Return the results
+  return(as.numeric(s2) * XX_inv)
+}  
+```
+
+
+```{r Robust varcov fxn}
+vcov_white <- function(data, y_var, X_vars, intercept = T) {
+  # Turn data into matrices
+  y <- to_matrix(data, y_var)
+  X <- to_matrix(data, X_vars)
+  # Add intercept
+  if (intercept == T) X <- cbind(1, X)
+  # Calculate n and k for degrees of freedom
+  n <- nrow(X)
+  k <- ncol(X)
+  # Estimate coefficients
+  b <- b_ols(y, X)
+  # Update names
+  if (intercept == T) rownames(b)[1] <- "Intercept"
+  # Calculate OLS residuals
+  e <- y - X %*% b
+  # Inverse of X'X
+  XX_inv <- solve(t(X) %*% X)
+  # For each row, calculate x_i' x_i e_i^2; then sum
+  sigma_hat <- lapply(X = 1:n, FUN = function(i) {
+    # Define x_i
+    x_i <- matrix(as.vector(X[i,]), nrow = 1)
+    # Return x_i' x_i e_i^2
+    return(t(x_i) %*% x_i * e[i]^2)
+  }) %>% Reduce(f = "+", x = .)
+  # Return the results
+  return(XX_inv %*% sigma_hat %*% XX_inv)
+}
+```
+
+```{r Spherical Variance}
+# Comparing spherical variance
+vcov_ols(data = wage_df,
+  y_var = "lwage",
+  X_vars = c("exper", "tenure", "married", "south", "urban", "black", "educ")) %>%
+  diag() %>% sqrt()
+
+```
+
+```{r White's robust}
+# With White's robust
+vcov_white(data = wage_df,
+  y_var = "lwage",
+  X_vars = c("exper", "tenure", "married", "south", "urban", "black", "educ")) %>%
+  diag() %>% sqrt()
+
+```
+The "heteroskedasitc" robust standard errors are about the same as the traditional OLS standard erros. This leads me to believe that this doesn't solve the problem.
+
+### (f) Two-step FGLS estimation procedure
+
 
 ## Question 3: The Delta Method
 
