@@ -439,6 +439,30 @@ vcov_white(data = wage_df,
 The "heteroskedasitc" robust standard errors are about the same as the traditional OLS standard erros. This leads me to believe that this doesn't solve the problem.
 
 ### (f) Two-step FGLS estimation procedure
+```{r 2SFGLS}
+# Add e^2 from earlier to our dataframe
+wage_df3 <-select(wage_df, - bp_y)
+
+#should I put some loop?
+model_3 <- ols(wage_df3, y_data = "lwage", 
+               X_data = c("exper", "tenure", "married", "south", "urban", "black", "educ"))
+
+
+wage_df3 %<>% mutate(e2 = model_3$vars$e^2)
+fgls_predict <- bp_resid <- ols(wage_df3, y_data = "e2", 
+               X_data = c("exper", "tenure", "married", "south", "urban", "black", "educ"))$vars$y_hat
+weights <- 1/sqrt(fgls_predict)
+
+wage_df3 <- wage_df3 * weights
+
+# Grab the new variances
+vcov_ols(data = wage_df3,
+  y_var = "lwage",
+  X_vars = c("exper", "tenure", "married", "south", "urban", "black", "educ")) %>%
+  diag() %>% sqrt()
+
+# Could do a loop, but I don't know what threshold would be reasonable
+```
 
 
 ## Question 3: The Delta Method
