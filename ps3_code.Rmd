@@ -467,6 +467,22 @@ vcov_ols(data = wage_df3,
 
 ## Question 3: The Delta Method
 
-See Ed's notes here: [http://edrub.in/ARE212/section09.html#route_2:_delta_method]
+```{r}
+model_1$b
+# Remind ourselves of LC and its var-cov matrix
+lc <- 100 * model_1$b[4] - 100
+vcov1 <- vcov_ols(data = wage_df,
+  y_var = "lwage",
+  X_vars = c("exper", "tenure", "married", "south", "urban", "black", "educ"))
+# Define our derivative matrix
+deriv_mat <- matrix(c(0, 0, 0, 100, 0, 0, 0, 0), nrow = 1)
+# Calculate the standard error of 'lc' via delta method
+lc_dm <- sqrt(deriv_mat %*% vcov1 %*% t(deriv_mat))
+
+lc
+lc_dm
+(t_stat <- lc/ lc_dm)
+```
+
 
 
