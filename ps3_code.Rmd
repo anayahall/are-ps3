@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, cache = T)
 options(stringsAsFactors = F)
 # Packages
 library(pacman)
-p_load(knitr, kableExtra, tidyverse, dplyr, readr, magrittr, ggplot2, readxl, ascii, sandwich, tinytec)
+p_load(knitr, kableExtra, tidyverse, dplyr, readr, magrittr, ggplot2, readxl, ascii, sandwich, tinytex)
 
 ```
 
@@ -33,18 +33,18 @@ The goal of this problem set is to explore some **tests for heteroskedasticity**
 wage_df <- readr::read_csv("nls80.csv")
 
 # Select only the variables in our model
-wage_df %<>% select(wage, exper, tenure, married, south, urban, black, educ)
+wage_df %<>% select(lwage, wage, exper, tenure, married, south, urban, black, educ)
 ```
 
 
 ``` {r plot_series, message = FALSE}
 # Plot the variables in our model
 ggplot(data = gather(wage_df), aes(x = value)) +
-geom_histogram() +
-facet_wrap(~ key, scales = "free") +
-ggtitle("Histograms of Wage Data variables") +
-ylab("Count") +
-xlab("Value") + theme_minimal()
+  geom_histogram() +
+  facet_wrap(~ key, scales = "free") +
+  ggtitle("Histograms of Wage Data variables") +
+  ylab("Count") +
+  xlab("Value") + theme_minimal()
 ```
 
 So far, everthing looks good.
@@ -169,7 +169,7 @@ ols <- function(data, y_data, X_data, intercept = T, H0 = 0, two_tail = T, alpha
     colnames(export_df) <- c("y","y_hat","e",colnames(X))
   
   # Return ----
-    return(list(n=n, dof=dof, b=b, vars=export_df, resid=e, R2uc=R2uc,R2=R2,
+    return(list(n=n, dof=dof, b=b, vars=export_df, R2uc=R2uc,R2=R2,
                 R2adj=R2adj, AIC=AIC, SIC=SIC, s2=s2, SST=SST, SSR=SSR,
                 mof_table=mof_table, ttest=ttest_table))
 }
@@ -177,10 +177,7 @@ ols <- function(data, y_data, X_data, intercept = T, H0 = 0, two_tail = T, alpha
 \newpage
 
 ```{r model1}
-wage_df %<>% mutate(
-  log_wage = log(wage))
-
-model_1 <- ols(wage_df, y_data = "log_wage", 
+model_1 <- ols(wage_df, y_data = "lwage", 
                X_data = c("exper", "tenure", "married", "south", "urban", "black", "educ"))
 
 model_1$ttest
@@ -234,7 +231,7 @@ white_test <- function(resid, cov_mat){
   # Calculate White test statistic = R^2 * n
   test_stat <- SSM / SST * cov_n
   # Calculate pvalue
-  pvalue <- 1 - pchisq(test_stat, df = ncol(cov_mat))
+  pvalue <- 1 - pchisq(test_stat, df = (ncol(cov_mat)-1)) #dof is p-1 yes?
   
   
   return(list(PValue = pvalue, TestStat = test_stat, dof=ncol(cov_mat)))
@@ -258,13 +255,13 @@ white_test <- function(resid, cov_mat){
 
 ```{r 2b}
 # Prep for white function
-resid <- model_1$resid
+resid <- model_1$vars$e
 cov_mat <- wage_df %>% select(exper, tenure, married, south, urban, black, educ)
 
 # Run White Test
 white_test(resid, cov_mat)
 ```
-There is some evidence for heteroskedasticity (probabilty is 0.0678), though not significant at 5% significance level.
+There is some evidence for heteroskedasticity (probabilty is 0.0535), though not significant at 5% significance level.
 
 
 ### (c) Goldfeld - Quandt Test for heteroskedastic errors
@@ -274,9 +271,7 @@ There is some evidence for heteroskedasticity (probabilty is 0.0678), though not
 _Goldfeld-Quant Test:_
 Intuition: The disturbances for two distinct groups of observations vary.
 
-Process: Rank observations by x, separate into groups of high and low variances, then calculate test statistic:
-
-In this case, save residuals from first 350 observations (1:350) and last 350 observations (585:935)
+Process: Rank observations by x (variable of interest) and separate into groups of high and low variances. In this case we will remove the middle 235 observations (increasing the power of the test). For the two samples, run the least squares moel and record the residuals from each regression. Then calculate test statistic: $F_{[n_1-k, \space n_2-k]}= \frac{e_1^`e_1/(n_1-k)}{e_2^`e_2/(n_2-k)}$
 
 
 ``` {r goldfeldquant_fxn}
@@ -285,8 +280,8 @@ GQ_test <- function(e1, e2, k) {
   n1 <- length(e1)
   n2 <- length(e2)
   
-  SSE1 <- sum(e1^2)/(n1-k)
-  SSE2 <- sum(e2^2)/(n2-k)
+  SSE1 <- (t(e1) %*% e1)/(n1-k)
+  SSE2 <- (t(e2) %*% e2)/(n2-k)
   test_stat <- SSE1 / SSE2
   
   pvalue <- 1 - pf(test_stat, n1-k, n2-k)
@@ -301,24 +296,22 @@ GQ_test <- function(e1, e2, k) {
 
 ```{r 2c}
 # Prep for test
-
-# Create data frame for test
-test_df <- data.frame(
-  # Save residuals from regession and X var
-  resid = as.vector(model_1$resid),
-  tenure = wage_df$tenure) %>%
-  # arrange by X (tenure)
-  arrange(.,tenure)
-
-# split resid into 2 groups (1:350) & (585:935)
-e1 <- test_df$resid[1:350]
-e2 <- test_df$resid[585:935]
+# Rank by tenure
+wage_df %<>% arrange(tenure)
+# Splitting the data, removing the middle 235 observations
+wage_df1 <- wage_df[1:350,]
+wage_df2 <- wage_df[586:935,]
+# Run two regressions saving their residuals
+gq_resid_1 <- ols(wage_df1, y_data = "lwage", 
+               X_data = c("exper", "tenure", "married", "south", "urban", "black", "educ"))$vars$e
+gq_resid_2 <- ols(wage_df2, y_data = "lwage", 
+               X_data = c("exper", "tenure", "married", "south", "urban", "black", "educ"))$vars$e
 
 # Run GQ Test
-GQ_test(e1, e2, k=7)
+GQ_test(gq_resid_1, gq_resid_2, k=7)
 
 ```
-According to the Goldfeld-Quandt Test, yes, we have a significant heteroskedasticity problem.
+According to the Goldfeld-Quandt Test (by tenure), yes, we have a significant heteroskedasticity problem.
 
 ### (d) Breusch-Pagan Test for heteroskedastic errors
 *Use all of the covariates as a simple linear combination. Do we have a problem?*
