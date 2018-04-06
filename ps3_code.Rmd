@@ -270,28 +270,55 @@ There is some evidence for heteroskedasticity (probabilty is 0.0678), though not
 ### (c) Goldfeld - Quandt Test for heteroskedastic errors
 *Use the tenure variable, leaving out the 235 observations in the middle. Do we have a problem?*
 
+
 _Goldfeld-Quant Test:_
 Intuition: The disturbances for two distinct groups of observations vary.
 
 Process: Rank observations by x, separate into groups of high and low variances, then calculate test statistic:
 
-
+In this case, save residuals from first 350 observations (1:350) and last 350 observations (585:935)
 
 
 ``` {r goldfeldquant_fxn}
 
-GQ_test <- function(x1, x2) {
+GQ_test <- function(e1, e2, k) {
+  n1 <- length(e1)
+  n2 <- length(e2)
   
+  SSE1 <- sum(e1^2)/(n1-k)
+  SSE2 <- sum(e2^2)/(n2-k)
+  test_stat <- SSE1 / SSE2
   
+  pvalue <- 1 - pf(test_stat, n1-k, n2-k)
   
+  return(list(
+    "Test Statistic" = test_stat,
+    "P-Value" = pvalue
+  ))
 }
 
 ```
 
 ```{r 2c}
+# Prep for test
 
+# Create data frame for test
+test_df <- data.frame(
+  # Save residuals from regession and X var
+  resid = as.vector(model_1$resid),
+  tenure = wage_df$tenure) %>%
+  # arrange by X (tenure)
+  arrange(.,tenure)
+
+# split resid into 2 groups (1:350) & (585:935)
+e1 <- test_df$resid[1:350]
+e2 <- test_df$resid[585:935]
+
+# Run GQ Test
+GQ_test(e1, e2, k=7)
 
 ```
+According to the Goldfeld-Quandt Test, yes, we have a significant heteroskedasticity problem.
 
 ### (d) Breusch-Pagan Test for heteroskedastic errors
 *Use all of the covariates as a simple linear combination. Do we have a problem?*
