@@ -317,13 +317,26 @@ According to the Goldfeld-Quandt Test (by tenure), yes, we have a significant he
 *Use all of the covariates as a simple linear combination. Do we have a problem?*
 
 ```{r breushpagan_fxn}
-BP_test <- function(e, k) {
+BP_test <- function(data, e, cov_mat) {
+  
+  df <- data
+  
   n <- length(e)
   
-  SSE <- sum((e-mean(e))^2)
-  test_stat <- (1/2)*SSE
+  dep_var <- (n * e^2 / sum(e^2))
   
-  pvalue <- 1 - pchisq(test_stat, df = k)
+  bp_df <- data.frame(dep_var, cov_mat)
+  
+  bp_Xs <- names(bp_df[,-1])
+  # run ols & save residuals
+  bp_ols <- ols(bp_df, y = "dep_var", X = bp_Xs)
+  yhat <- bp_ols$vars$y_hat
+  
+  ESS <- sum((dep_var - yhat)^2)
+  
+  test_stat <- (1/2)*ESS
+  
+  pvalue <- 1 - pchisq(test_stat, df = nrow(cov_mat))
   
   return(list(
     "Test Statistic" = test_stat,
@@ -336,19 +349,24 @@ BP_test <- function(e, k) {
 ``` {r 2d}
 # Prep for test
 # Create new df w/ new variables
-num <- model_1$vars$e^2
-denom <- (t(model_1$vars$e) %*% model_1$vars$e)/nrow(wage_df) %>% as.numeric()
-wage_df %<>% mutate(bp_y = num/denom)
+# num <- model_1$vars$e^2
+# denom <- (t(model_1$vars$e) %*% model_1$vars$e)/nrow(wage_df) %>% as.numeric()
+# wage_df %<>% mutate(bp_y = num/denom)
+# 
+# # Run the regression with the new y variable
+# bp_resid <- ols(wage_df, y_data = "bp_y", 
+#                 X_data = c("exper", "tenure", "married", "south", "urban", "black", "educ"))$vars$e
 
-# Run the regression with the new y variable
-bp_resid <- ols(wage_df, y_data = "bp_y", 
-               X_data = c("exper", "tenure", "married", "south", "urban", "black", "educ"))$vars$e
+cov_mat <- wage_df %>% select(exper, tenure, married, south, urban, black, educ)
+
+e <- model_1$vars$e
 
 # Run GQ Test
-BP_test(bp_resid, k=7)
+BP_test(wage_df, e, cov_mat)
+
 
 ```
-Very low p-value. So, this test further validates. But, something may be broken.e
+Very low p-value. This test further validates our previous tests, we likely have an heteroskedasticity problem!
 
 
 ### (e) White Robust Standard Errors
