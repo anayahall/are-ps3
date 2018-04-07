@@ -597,7 +597,7 @@ delta_results <- data.frame(
   method = c("OLS", "FGLS"),
   coef = c(ols_df$b[4], fgls_df$b[4]),
   theta = 100 * (exp(c(ols_df$b[4], fgls_df$b[4])) - 1),
-  se = 100 * exp(c(ols_df$b[4], fgls_df$b[4])) * c(ols_df$b[4], fgls_df$b[4]) ) 
+  se = sqrt(100 * exp(c(ols_df$b[4], fgls_df$b[4])) * c(ols_df$b[4], fgls_df$b[4])) ) 
 delta_results %>% knitr::kable(col.names = c("Est. Method", "Beta_3", "Est. Theta", "S.E."),
   digits = c(4))
 ```
