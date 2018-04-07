@@ -474,7 +474,6 @@ knitr::kable(se_df,
   caption = "2E - Comparing SE",
   booktabs = T
   ) %>% print()
-
 ```
 
 The heteroskedasitc robust standard errors are about the same as the traditional OLS standard error, though some have slightly increased. Perhaps there is a better way to address this issue.... for instance, FGLS!
@@ -489,7 +488,7 @@ _FGLS Procedure:_
 
 First  run a regression to estimate the (sigma squared) using the least squares residuals. Then,  use the estimated (sigma hat squared ) to weight the individual observations (including the intercept!) and run OLS again. 
 
-```{r 2SFGLS_fxn}
+```{r 2SFGLS_fxn, echo = F}
 # Add e^2 from earlier to our dataframe
 wage_df3 <- wage_df
 
@@ -504,20 +503,23 @@ fgls_predict <- bp_resid <- ols(wage_df3, y_data = "e2",
 weights <- 1/sqrt(fgls_predict)
 
 #add intercept before weighting!
-wage_df3 %<>% cbind(1,.) * weights
+wage_df3 <- wage_df3 %<>% cbind(1,.) * weights 
+colnames(wage_df3)[1] <- "intercept"
 
 # Re-estimate model
-ols(wage_df3, "lwage", colnames(cov_mat)) 
 
+ols_df <- ols(wage_df3, "lwage", c("intercept",colnames(cov_mat)), intercept = F) 
+ols_df$ttest
 # Print variances
-# vcov_ols(data = wage_df3,
+#vcov_ols(data = wage_df3,
 #   y_var = "lwage",
 #   X_vars = c("exper", "tenure", "married", "south", "urban", "black", "educ")) %>%
 #   diag() %>% sqrt() %>% knitr::kable(
 #     row.names = c("FGLS S.E.")
 #  )
 ```
-*INTERPRET*
+
+Finally, smaller standard errors!!!
 
 
 ```{r fglsfunctionattempt, include=F}
@@ -548,16 +550,31 @@ ols(wage_df3, "lwage", colnames(cov_mat))
 # #run function on data
 # 
 # fgls(wage_df, wage_df$lwage, cov_mat)
-
-
 ```
-
 
 ## Question 3: The Delta Method
 
 ### (a)
 
-(need to LATEX this up still! )
+Model #2:
+$log(wage) = \beta0 + exper\cdot\beta1 + tenure\cdot\beta2 + married\cdot\beta3 + south\cdot\beta4 + urban\cdot\beta5 + black\cdot\beta6 + educ\cdot\beta7 + \epsilon $
+
+take the exponent of both side, which gives us:
+
+$wage = e^{βo+exper\cdot\beta1+tenure\cdot\beta2+married\cdot\beta3+south\cdot\beta4+urban\cdot\beta5+black\cdot\beta6+educ\cdot\beta7+\epsilon}$
+
+Ceteris Peribos (ie, letting all the other variables be zero $\gamma$ we get:
+$wage = e^{\beta0+exper\cdot\beta1+Z\gamma +\epsilon}$
+
+Taking the expectation of both sides conditional on the covariates:
+
+$E[wage|X] = E[e^{\beta_0+married\cdot\beta_3+Zγ +\epsilon|X] = E[e\beta_0+married\cdot\beta_3+Z\gamma e\epsilon|X] $
+And given that both $\epsilon$ is independent of X and the covariates are independent of each-other we get:
+θ1 = eβo+marriedβ3+Zγ eε (5)
+So there can only be two states of married, you either aren’t or you are.... 1 or 0, giving you one or the other extreme:
+θ1−1 = eβo+β3+Zγ eε (6) θ1−0 = eβo+Zγ eε (7)
+If you take the difference of equations 6 and 7 and then divide it by 6 you get the percentage difference which results in our consistent estimator θ1.
+θˆ = 100[(eβo+β3+Zγ eε − eβo+Zγ eε)/(eβo+Zγ eε)] = 100[eβ3 − 1] (8) 1
 
 ### (b)
 
@@ -601,3 +618,4 @@ delta_results <- data.frame(
 delta_results %>% knitr::kable(col.names = c("Est. Method", "Beta_3", "Est. Theta", "S.E."),
   digits = c(4))
 ```
+
