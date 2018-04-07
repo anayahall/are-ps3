@@ -557,24 +557,28 @@ Finally, smaller standard errors!!!
 ### (a)
 
 Model #2:
-$log(wage) = \beta0 + exper\cdot\beta1 + tenure\cdot\beta2 + married\cdot\beta3 + south\cdot\beta4 + urban\cdot\beta5 + black\cdot\beta6 + educ\cdot\beta7 + \epsilon $
+$log(wage) = \beta_0 + exper\cdot\beta_1 + tenure\cdot\beta_2 + married\cdot\beta_3 + south\cdot\beta_4 + urban\cdot\beta_5 + black\cdot\beta_6 + educ\cdot\beta_7 + \epsilon$
 
-take the exponent of both side, which gives us:
+Take the exponent of both side, which gives us:
 
-$wage = e^{βo+exper\cdot\beta1+tenure\cdot\beta2+married\cdot\beta3+south\cdot\beta4+urban\cdot\beta5+black\cdot\beta6+educ\cdot\beta7+\epsilon}$
+$wage = e^{\beta_0+exper\cdot\beta_1+tenure\cdot\beta_2+married\cdot\beta_3+south\cdot\beta_4+urban\cdot\beta_5+black\cdot\beta_6+educ\cdot\beta_7+\epsilon}$
 
-Ceteris Peribos (ie, letting all the other variables be zero $\gamma$ we get:
-$wage = e^{\beta0+exper\cdot\beta1+Z\gamma +\epsilon}$
+We can rework a bit, setting all the other uninteristing variables equal to some constant, say $Z$, and separting $\epsilon$.
+$wage = e^{married\cdot\beta_3+Z+\epsilon}=e^{\epsilon}e^{married\cdot\beta_3}e^Z$
 
 Taking the expectation of both sides conditional on the covariates:
 
-$E[wage|X] = E[e^{\beta_0+married\cdot\beta_3+Zγ +\epsilon|X] = E[e\beta_0+married\cdot\beta_3+Z\gamma e\epsilon|X] $
-And given that both $\epsilon$ is independent of X and the covariates are independent of each-other we get:
-θ1 = eβo+marriedβ3+Zγ eε (5)
-So there can only be two states of married, you either aren’t or you are.... 1 or 0, giving you one or the other extreme:
-θ1−1 = eβo+β3+Zγ eε (6) θ1−0 = eβo+Zγ eε (7)
-If you take the difference of equations 6 and 7 and then divide it by 6 you get the percentage difference which results in our consistent estimator θ1.
-θˆ = 100[(eβo+β3+Zγ eε − eβo+Zγ eε)/(eβo+Zγ eε)] = 100[eβ3 − 1] (8) 1
+$E[wage|X]=E[e^{\epsilon}e^{married\cdot\beta_3}e^Z|X]$ and if $\epsilon$ is independent of all covariates we should get $=E[e^{\epsilon}|X]e^{married\cdot\beta_3}e^Z=E[e^{\epsilon}]e^{married\cdot\beta_3}e^Z$
+
+Where there can only be two states of married, you either aren’t or you are.... 1 or 0, giving you one or the other extreme, and ceteris paribus (holding all other covariates constant.:
+
+$E[wage|X\space \&\space married = 1] = E[e^{\epsilon}]e^{\beta_3}e^Z$ and
+$E[wage|X\space \&\space married = 0] = E[e^{\epsilon}]e^Z$
+
+If you take the difference of equations above and divide by the expected wage of an unmarried man and then multiply by 100, you get the percentage difference which results in our consistent estimator $\theta_1$.
+$\hat{\theta_1}=100\cdot \frac{E[wage|X\space \&\space married = 1]-E[wage|X\space \&\space married = 0]}{E[wage|X\space \&\space married = 0]}$
+
+$\hat{\theta_1}=100\cdot \frac{E[e^{\epsilon}]e^{\beta_3}e^Z-E[e^{\epsilon}]e^Z}{E[e^{\epsilon}]e^Z}=100 \cdot \frac{E[e^\epsilon]e^Z(e^{\beta_3}-1)}{E[e^\epsilon]e^Z}=100\cdot (e^{\beta_3}-1) \blacksquare$
 
 ### (b)
 
